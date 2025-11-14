@@ -23,12 +23,41 @@ export class ChototScraper {
 
     const page = await this.browser.newPage();
 
+    // Block các tracking và analytics để tăng tốc độ load
+    await page.route('**/*', (route) => {
+      const url = route.request().url();
+      const blockedDomains = [
+        'google-analytics.com',
+        'googletagmanager.com',
+        'facebook.com',
+        'facebook.net',
+        'doubleclick.net',
+        'analytics',
+        'tracking',
+        'mixpanel',
+        'hotjar',
+      ];
+
+      if (blockedDomains.some(domain => url.includes(domain))) {
+        route.abort();
+      } else {
+        route.continue();
+      }
+    });
+
     try {
       console.log(`Đang truy cập: ${this.config.categoryUrl}`);
-      await page.goto(this.config.categoryUrl, { waitUntil: 'networkidle' });
 
-      // Đợi trang load
-      await page.waitForTimeout(5000);
+      // Thay đổi waitUntil strategy:
+      // - 'domcontentloaded': Chỉ đợi DOM load (nhanh nhất, đủ để scrape)
+      // - timeout: 30s để tránh treo quá lâu
+      await page.goto(this.config.categoryUrl, {
+        waitUntil: 'domcontentloaded',
+        timeout: 30000
+      });
+
+      // Đợi cho selector chính xuất hiện thay vì đợi cố định
+      await page.waitForSelector('div.cdonovt', { timeout: 10000 });
 
       // Lấy danh sách tin rao - Chợ Tốt sử dụng div.cdonovt cho mỗi tin rao
       const listings = await page.evaluate((config) => {
