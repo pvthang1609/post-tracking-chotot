@@ -2,12 +2,14 @@ import { loadConfig } from './utils/config';
 import { Storage } from './utils/storage';
 import { ChototScraper } from './services/scraper';
 import { EmailService } from './services/emailService';
+import { TelegramService } from './services/telegramService';
 
 class ChototTracker {
   private config = loadConfig();
   private storage = new Storage();
   private scraper = new ChototScraper(this.config);
   private emailService = new EmailService(this.config);
+  private telegramService = new TelegramService(this.config);
   private isRunning = false;
 
   async start(): Promise<void> {
@@ -20,10 +22,15 @@ class ChototTracker {
     console.log(`Kiểm tra mỗi: ${this.config.checkInterval / 1000}s`);
     console.log('======================\n');
 
-    // Test email connection (không block app nếu thất bại)
-    const emailOk = await this.emailService.testConnection();
-    if (!emailOk) {
-      console.log('⚠️  Email không kết nối được, app sẽ tiếp tục chạy nhưng không gửi được thông báo');
+    // Test notification connections
+    if (this.config.telegram.enabled) {
+      await this.telegramService.testConnection();
+    }
+    if (this.config.email.user) {
+      const emailOk = await this.emailService.testConnection();
+      if (!emailOk) {
+        console.log('⚠️  Email không kết nối được');
+      }
     }
 
     // Initialize browser
@@ -92,8 +99,13 @@ class ChototTracker {
       if (newListings.length > 0) {
         console.log(`🎉 Tìm thấy ${newListings.length} tin rao mới!`);
 
-        // Send email notification
-        await this.emailService.sendNewListingsNotification(newListings);
+        // Send notifications
+        if (this.config.telegram.enabled) {
+          await this.telegramService.sendNewListingsNotification(newListings);
+        }
+        if (this.config.email.user) {
+          await this.emailService.sendNewListingsNotification(newListings);
+        }
 
         // Log new listings
         newListings.forEach((listing, index) => {

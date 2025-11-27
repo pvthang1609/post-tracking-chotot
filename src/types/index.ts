@@ -21,6 +21,11 @@ export interface Config {
     password: string;
     notifyEmail: string;
   };
+  telegram: {
+    botToken: string;
+    chatId: string;
+    enabled: boolean;
+  };
   browser: {
     headless: boolean;
   };

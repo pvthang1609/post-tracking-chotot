@@ -10,15 +10,20 @@ export function loadConfig(): Config {
     'MIN_PRICE',
     'MAX_PRICE',
     'CHECK_INTERVAL',
-    'EMAIL_USER',
-    'EMAIL_PASSWORD',
-    'NOTIFY_EMAIL'
   ];
 
   for (const key of required) {
     if (!process.env[key]) {
       throw new Error(`Missing required environment variable: ${key}`);
     }
+  }
+
+  // Check nếu không có Telegram thì phải có Email
+  const telegramEnabled = !!(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID);
+  const emailEnabled = !!(process.env.EMAIL_USER && process.env.EMAIL_PASSWORD && process.env.NOTIFY_EMAIL);
+
+  if (!telegramEnabled && !emailEnabled) {
+    throw new Error('Phải cấu hình ít nhất một kênh thông báo: Telegram hoặc Email');
   }
 
   // Parse keywords từ chuỗi phân cách bởi dấu phẩy
@@ -37,9 +42,14 @@ export function loadConfig(): Config {
     checkInterval: parseInt(process.env.CHECK_INTERVAL!, 10),
     email: {
       service: process.env.EMAIL_SERVICE || 'gmail',
-      user: process.env.EMAIL_USER!,
-      password: process.env.EMAIL_PASSWORD!,
-      notifyEmail: process.env.NOTIFY_EMAIL!,
+      user: process.env.EMAIL_USER || '',
+      password: process.env.EMAIL_PASSWORD || '',
+      notifyEmail: process.env.NOTIFY_EMAIL || '',
+    },
+    telegram: {
+      botToken: process.env.TELEGRAM_BOT_TOKEN || '',
+      chatId: process.env.TELEGRAM_CHAT_ID || '',
+      enabled: telegramEnabled,
     },
     browser: {
       headless: process.env.HEADLESS !== 'false',
