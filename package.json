@@ -13,7 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "playwright": "^1.40.0",
+    "playwright": "^1.56.1",
     "dotenv": "^16.3.1",
     "nodemailer": "^6.9.7"
   },

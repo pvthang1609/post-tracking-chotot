@@ -1,5 +1,5 @@
 # Use Playwright's official image which has all browser dependencies pre-installed
-FROM mcr.microsoft.com/playwright:v1.40.0-jammy
+FROM mcr.microsoft.com/playwright:v1.56.1-jammy
 
 WORKDIR /app
 
