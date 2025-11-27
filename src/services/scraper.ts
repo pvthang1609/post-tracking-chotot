@@ -12,6 +12,12 @@ export class ChototScraper {
   async init(): Promise<void> {
     this.browser = await chromium.launch({
       headless: this.config.browser.headless,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+      ],
     });
     console.log('✓ Đã khởi động trình duyệt');
   }
