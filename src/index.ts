@@ -20,8 +20,11 @@ class ChototTracker {
     console.log(`Kiểm tra mỗi: ${this.config.checkInterval / 1000}s`);
     console.log('======================\n');
 
-    // Test email connection
-    await this.emailService.testConnection();
+    // Test email connection (không block app nếu thất bại)
+    const emailOk = await this.emailService.testConnection();
+    if (!emailOk) {
+      console.log('⚠️  Email không kết nối được, app sẽ tiếp tục chạy nhưng không gửi được thông báo');
+    }
 
     // Initialize browser
     await this.scraper.init();

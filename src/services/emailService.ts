@@ -8,11 +8,16 @@ export class EmailService {
   constructor(config: Config) {
     this.config = config;
     this.transporter = nodemailer.createTransport({
-      service: config.email.service,
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
       auth: {
         user: config.email.user,
         pass: config.email.password,
       },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
     });
   }
 
@@ -35,7 +40,7 @@ export class EmailService {
       console.log(`✓ Đã gửi email thông báo ${listings.length} tin rao mới`);
     } catch (error) {
       console.error('Lỗi khi gửi email:', error);
-      throw error;
+      // Không throw để app tiếp tục chạy
     }
   }
 
