@@ -8,23 +8,30 @@ export interface Listing {
   timestamp: number;
 }
 
-export interface Config {
-  categoryUrl: string;
-  region: string;
+export interface TelegramBot {
+  name: string;
+  botToken: string;
+  chatId: string;
+}
+
+export interface TrackingGroup {
+  name: string;
+  keywords: string[];
   minPrice: number;
   maxPrice: number;
-  keywords: string[];
+  telegramBots: string[]; // Tên của các bot để gửi thông báo
+}
+
+export interface Config {
+  categoryUrl: string;
   checkInterval: number;
+  trackingGroups: TrackingGroup[];
+  telegramBots: TelegramBot[];
   email: {
     service: string;
     user: string;
     password: string;
     notifyEmail: string;
-  };
-  telegram: {
-    botToken: string;
-    chatId: string;
-    enabled: boolean;
   };
   browser: {
     headless: boolean;

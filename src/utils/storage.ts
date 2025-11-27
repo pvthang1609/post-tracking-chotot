@@ -18,7 +18,7 @@ export class Storage {
 
   saveSnapshot(listings: Listing[]): void {
     fs.writeFileSync(SNAPSHOT_FILE, JSON.stringify(listings, null, 2), 'utf-8');
-    console.log(`✓ Đã lưu ${listings.length} tin rao vào snapshot`);
+    console.log(`[OK] Saved ${listings.length} listings to snapshot`);
   }
 
   loadSnapshot(): Listing[] {

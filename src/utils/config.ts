@@ -1,14 +1,11 @@
 import * as dotenv from 'dotenv';
-import { Config } from '../types';
+import { Config, TelegramBot, TrackingGroup } from '../types';
 
 dotenv.config();
 
 export function loadConfig(): Config {
   const required = [
     'CATEGORY_URL',
-    'REGION',
-    'MIN_PRICE',
-    'MAX_PRICE',
     'CHECK_INTERVAL',
   ];
 
@@ -18,38 +15,82 @@ export function loadConfig(): Config {
     }
   }
 
-  // Check nếu không có Telegram thì phải có Email
-  const telegramEnabled = !!(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID);
-  const emailEnabled = !!(process.env.EMAIL_USER && process.env.EMAIL_PASSWORD && process.env.NOTIFY_EMAIL);
+  // Parse Telegram bots từ env
+  // Format: TELEGRAM_BOTS=bot1|token1|chatId1;bot2|token2|chatId2
+  const telegramBots: TelegramBot[] = [];
+  const telegramBotsString = process.env.TELEGRAM_BOTS || '';
 
-  if (!telegramEnabled && !emailEnabled) {
-    throw new Error('Phải cấu hình ít nhất một kênh thông báo: Telegram hoặc Email');
+  if (telegramBotsString) {
+    const botConfigs = telegramBotsString.split(';');
+    for (const botConfig of botConfigs) {
+      const parts = botConfig.split('|').map(s => s.trim());
+      if (parts.length >= 3) {
+        const [name, botToken, chatId] = parts;
+        if (name && botToken && chatId) {
+          telegramBots.push({ name, botToken, chatId });
+        }
+      }
+    }
   }
 
-  // Parse keywords từ chuỗi phân cách bởi dấu phẩy
-  const keywordsString = process.env.KEYWORDS || '';
-  const keywords = keywordsString
-    .split(',')
-    .map(k => k.trim().toLowerCase())
-    .filter(k => k.length > 0);
+  // Parse tracking groups từ env
+  // Format: TRACKING_GROUPS=group1|keyword1,keyword2|minPrice|maxPrice|bot1,bot2;group2|keyword3|minPrice|maxPrice|bot1
+  const trackingGroups: TrackingGroup[] = [];
+  const trackingGroupsString = process.env.TRACKING_GROUPS || '';
+
+  if (trackingGroupsString) {
+    const groupConfigs = trackingGroupsString.split(';');
+    for (const groupConfig of groupConfigs) {
+      const parts = groupConfig.split('|').map(s => s.trim());
+      if (parts.length >= 5) {
+        const [name, keywordsStr, minPriceStr, maxPriceStr, botsStr] = parts;
+        const keywords = keywordsStr.split(',').map(k => k.trim().toLowerCase()).filter(k => k.length > 0);
+        const minPrice = parseInt(minPriceStr, 10);
+        const maxPrice = parseInt(maxPriceStr, 10);
+        const telegramBotNames = botsStr.split(',').map(b => b.trim()).filter(b => b.length > 0);
+
+        if (name && keywords.length > 0 && !isNaN(minPrice) && !isNaN(maxPrice)) {
+          trackingGroups.push({
+            name,
+            keywords,
+            minPrice,
+            maxPrice,
+            telegramBots: telegramBotNames,
+          });
+        }
+      }
+    }
+  }
+
+  // Validate: phải có ít nhất 1 tracking group và 1 telegram bot
+  if (trackingGroups.length === 0) {
+    throw new Error('Phải cấu hình ít nhất một tracking group (TRACKING_GROUPS)');
+  }
+
+  if (telegramBots.length === 0) {
+    throw new Error('Phải cấu hình ít nhất một Telegram bot (TELEGRAM_BOTS)');
+  }
+
+  // Validate: kiểm tra các bot trong tracking groups có tồn tại
+  const botNames = new Set(telegramBots.map(b => b.name));
+  for (const group of trackingGroups) {
+    for (const botName of group.telegramBots) {
+      if (!botNames.has(botName)) {
+        throw new Error(`Bot "${botName}" trong group "${group.name}" không tồn tại trong TELEGRAM_BOTS`);
+      }
+    }
+  }
 
   return {
     categoryUrl: process.env.CATEGORY_URL!,
-    region: process.env.REGION!,
-    minPrice: parseInt(process.env.MIN_PRICE!, 10),
-    maxPrice: parseInt(process.env.MAX_PRICE!, 10),
-    keywords,
     checkInterval: parseInt(process.env.CHECK_INTERVAL!, 10),
+    trackingGroups,
+    telegramBots,
     email: {
       service: process.env.EMAIL_SERVICE || 'gmail',
       user: process.env.EMAIL_USER || '',
       password: process.env.EMAIL_PASSWORD || '',
       notifyEmail: process.env.NOTIFY_EMAIL || '',
-    },
-    telegram: {
-      botToken: process.env.TELEGRAM_BOT_TOKEN || '',
-      chatId: process.env.TELEGRAM_CHAT_ID || '',
-      enabled: telegramEnabled,
     },
     browser: {
       headless: process.env.HEADLESS !== 'false',
