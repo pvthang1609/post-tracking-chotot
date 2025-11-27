@@ -26,12 +26,13 @@ class ChototTracker {
     if (this.config.telegram.enabled) {
       await this.telegramService.testConnection();
     }
-    if (this.config.email.user) {
-      const emailOk = await this.emailService.testConnection();
-      if (!emailOk) {
-        console.log('⚠️  Email không kết nối được');
-      }
-    }
+    // Email disabled - uncomment to enable
+    // if (this.config.email.user) {
+    //   const emailOk = await this.emailService.testConnection();
+    //   if (!emailOk) {
+    //     console.log('⚠️  Email không kết nối được');
+    //   }
+    // }
 
     // Initialize browser
     await this.scraper.init();
@@ -103,9 +104,10 @@ class ChototTracker {
         if (this.config.telegram.enabled) {
           await this.telegramService.sendNewListingsNotification(newListings);
         }
-        if (this.config.email.user) {
-          await this.emailService.sendNewListingsNotification(newListings);
-        }
+        // Email disabled - uncomment to enable
+        // if (this.config.email.user) {
+        //   await this.emailService.sendNewListingsNotification(newListings);
+        // }
 
         // Log new listings
         newListings.forEach((listing, index) => {
